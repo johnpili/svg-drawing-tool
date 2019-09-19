@@ -1,0 +1,764 @@
+<html>
+	<head>
+		<title>SVG DRAWING TOOL</title>
+		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		<script src="vue.js"></script> 
+		<script src="jquery-3.2.1.js"></script>
+		<script src="axios.js"></script>
+		<script src="svg-pan-zoom.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+		<link rel="stylesheet" type="text/css" href="site.css" />
+	</head>
+	<body>
+		<div id="root" class="wrapper">
+			<nav id="sidebar">
+				<ul class="list-unstyled components" style="padding-left: 15px; margin-bottom: 10px;">
+					<li :class="{ selectMousePointerMode: pointerMode='pointer' }"><a href="#" title="point"><img src="editor-icons/pointer.svg" style="width: 40px;" /></a></li>
+					<li><a href="#" title="move"><img src="editor-icons/move.svg" style="width: 40px;" /></a></li>
+					<li><a href="#" title="pan"><img src="editor-icons/pan.svg" style="width: 40px;" /></a></li>
+					<li><a href="#" title="text" @click="selectMousePointerMode('text')"><img src="editor-icons/text.svg" style="width: 40px;" /></a></li>
+				</ul>
+				<ul class="list-unstyled components">
+
+					<li><a href="#" title="Busbar" @click="addObject('busbar')"><img src="editor-icons/busbar-icon.svg" alt="Busbar" title="Busbar" /></a></li>
+					<li><a href="#" title="Connection" @click="addObject('connection')"><img src="symbols/busbar.svg" alt="Connection" title="Connection" /></a></li>
+					<li><a href="#" title="TX" @click="addObject('tx')"><img src="symbols/tx.svg" alt="Busbar" title="Busbar" /></a></li>
+					
+					<li><a href="#"><img src="tx2.svg" /></a></li>
+					<li><a href="#"><img src="tx2.svg" /></a></li>
+					<li><a href="#"><img src="tx2.svg" /></a></li>
+					<li><a href="#"><img src="tx2.svg" /></a></li>
+					<li><a href="#"><img src="tx2.svg" /></a></li>
+				</ul>
+			</nav>
+			<div id="content" style="width: 100%;">
+				<div class="container-fluid">
+					<div class="col-sm-9 col-md-9 col-lg-10" style="padding: 0;">
+						<div id="svgContainer" style="background-color: #ffffff;">
+							<svg xmlns="http://www.w3.org/2000/svg" id="svgCanvas" name="svgCanvas" style="display: inline; width: inherit; min-width: inherit; max-width: inherit; height: inherit; min-height: inherit; max-height: inherit; " viewBox="0 0 1200 1200" version="1.1">
+								<g class="svg-pan-zoom_viewport">
+									<g id='svgContent' transform="matrix(1,0,0,1,0,0);"></g>
+								</g>
+							</svg>
+						</div>
+						<!--<div class="container-fluid" style="height: 100px;">
+							<div class="row">
+								<textarea id="command-module" style="width: 100%; height: 100%; color: #ffffff; border-color: #000000;">
+								</textarea>
+							</div>
+						</div>-->
+					</div>
+					<div class="col-sm-3 col-md-3 col-lg-2">
+						<div id="elementPropertyPanel" style="overflow-y: scroll;">
+							<label class="unselectable">Property</label>
+							<div class="container-fluid">
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">ID</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyIdElement" type="text" readonly="readonly">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">TagName</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementTagName" type="text">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">X1</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementX" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">Y1</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementY" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">X2</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementX2" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">Y2</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementY2" type="number" step="0.1" value="">
+									</div>
+								</div>
+
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 0</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementMatrix0" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 1</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementMatrix1" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 2</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementMatrix2" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 3</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementMatrix3" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 4</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementMatrix4" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 5</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input id="propertyElementMatrix5" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<button class="btn btn-primary" @click="updateMatrix">UPDATE</button>
+										<button class="btn btn-danger" @click="deleteSvgElement">DELETE</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div id="elementListPanel" style="overflow-x: scroll;">
+							<label>Elements</label>
+							<ul>
+								<li v-for="item in elements">
+									{{item.tagName}}
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="text-modal" class="modal fade">
+	 			<div class="modal-dialog" role="document">
+	    			<div class="modal-content">
+	      				<div class="modal-header">
+		        			<h5 class="modal-title">Enter Text</h5>
+		        			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		          				<span aria-hidden="true">&times;</span>
+		        			</button>
+	      				</div>
+		      			<div class="modal-body">
+		        			<input class="form-control" type="text" v-model="addTextValue" />
+		      			</div>
+		      			<div class="modal-footer">
+		        			<button type="button" class="btn btn-primary" @click="addText">Add</button>
+		        			<button type="button" class="btn btn-secondary" data-dismiss="modal" @click="cancelText">Close</button>
+		      			</div>
+	    			</div>
+	  			</div>
+			</div>
+		</div>
+		
+		<script type="text/javascript">
+
+
+										var selectedElement = 0;
+										var currentX = 0;
+										var currentY = 0;
+										var currentMatrix = 0;
+										var isDragging = false;
+
+										function selectElement(evt) {
+											selectedElement = evt.target;
+											//currentX = evt.clientX;
+											//currentY = evt.clientY;
+											currentX = mouseLocationPoint(evt).x;
+											currentY = mouseLocationPoint(evt).y;
+											currentMatrix;
+											try{
+												currentMatrix = selectedElement.getAttributeNS(null, "transform").slice(7, -1).split(' ');
+												console.log(selectedElement.getAttributeNS(null, "id"));
+											}
+											catch(err)
+											{
+												// THIS IS CODE TO GET THE PARENT GROUP ELEMENT
+												var parentElement = findParent(evt.target, 'x');
+												selectedElement = parentElement;
+												currentMatrix = selectedElement.getAttributeNS(null, "transform").slice(7, -1).split(' ');
+											}
+
+											for (var i = 0; i < currentMatrix.length; i++) {
+												currentMatrix[i] = parseFloat(currentMatrix[i]);
+											}
+
+											try
+											{
+												$('#propertyIdElement').val(selectedElement.getAttributeNS(null, "id"));
+												$('#propertyElementX').val(currentMatrix[4]);
+												$('#propertyElementY').val(currentMatrix[5]);
+
+												$('#propertyElementMatrix0').val(currentMatrix[0]);
+												$('#propertyElementMatrix1').val(currentMatrix[1]);
+												$('#propertyElementMatrix2').val(currentMatrix[2]);
+												$('#propertyElementMatrix3').val(currentMatrix[3]);
+												$('#propertyElementMatrix4').val(currentMatrix[4]);
+												$('#propertyElementMatrix5').val(currentMatrix[5]);
+
+												$('#propertyElementX2').val(selectedElement.getAttributeNS(null, "x2"));
+												$('#propertyElementY2').val(selectedElement.getAttributeNS(null, "y2"));
+											}
+											catch(err)
+											{
+												console.error(err);
+											}
+
+											selectedElement.setAttributeNS(null, "onmousemove", "moveElement(evt)");
+											//selectedElement.setAttributeNS(null, "onmouseup", "deselectElement(evt)");
+										}
+
+										function mouseLocationPoint(evt)
+										{
+											var svgElement = document.querySelector('#svgCanvas');
+											var pt = svgElement.createSVGPoint();
+											pt.x = evt.clientX; pt.y = evt.clientY;
+  											//console.log(pt.matrixTransform(svgElement.getScreenCTM().inverse()));
+  											return pt.matrixTransform(svgElement.getCTM().inverse());
+										}
+
+										function moveElement(evt) {
+											var dx = mouseLocationPoint(evt).x - currentX;
+											var dy = mouseLocationPoint(evt).y - currentY;											
+											currentMatrix[4] += dx;
+											currentMatrix[5] += dy;
+
+											selectedElement.setAttributeNS(null, "transform", "matrix(" + currentMatrix.join(' ') + ")");
+											currentX = dx;
+											currentY = dy;
+										}
+
+										function deselectElement(evt) {											
+											if (selectedElement != 0) {
+												selectedElement.removeAttributeNS(null, "onmousemove");
+												selectedElement.removeAttributeNS(null, "onmouseup");
+												selectedElement = 0;
+											}
+										}
+
+			/*
+				idParent
+				parentType
+				idElement
+				elementType
+				voltageLevel
+				description
+
+			*/
+
+
+
+			class SvgComponent
+			{
+				constructor(svgElement)
+				{
+					this.svgElement = svgElement;
+					this.operationMode = 'default';
+					this.selectedElement = 0;
+					this.isDragging = false;
+				}
+
+				//region GETTERS
+
+				get x()
+				{
+					return 0;
+				}
+
+				get y()
+				{
+					return 0;
+				}
+
+				//endregion
+
+				onMouseMoveHandler(event)
+				{
+				}
+
+				onMouseUpHandler(event)
+				{
+					this.selectedElement = 0;
+					this.isDragging = false;
+				}
+
+				onMouseDownHandler(event)
+				{
+					switch(this.operationMode)
+					{
+						case 'default':
+						{
+							break;
+						}
+						case 'drag-element':
+						{
+							isDragging = true;
+							break;
+						}
+						case 'pan':
+						{
+							break;
+						}
+						default:
+						{
+							break;
+						}
+					}
+				}	
+			}
+
+			class Element
+			{
+				constructor(data)
+				{
+				}
+			}
+
+			window.SharedEvents = new Vue();
+
+			var app = new Vue({
+				el: "#root",
+				data: {	
+					handleCounter: 1,
+					addTextValue: '',
+					svgElement: null,
+					operationMode: '',
+					operationModePair: 0,
+					operationModeX1: 0,
+					operationModeY1: 0,
+					operationModeX2: 0,
+					operationModeY2: 0,
+					operationModeR: 0,
+					pointerMode: 'pointer',
+					elements: [],
+					x: 0,
+					y: 0,
+					canvasSvgPanZoom: null
+				},
+				mounted() {
+					this.svgElement = document.querySelector('#svgCanvas');
+					this.canvasSvgPanZoom = svgPanZoom(this.svgElement, {
+						zoomEnabled: true,
+						panEnabled: false,
+						dblClickZoomEnabled: false,
+	          			mouseWheelZoomEnabled: true,
+						preventMouseEventsDefault: false,
+	          			controlIconsEnabled: true,
+	          			fit: true,
+	          			center: true});
+
+					window.addEventListener('keydown', function(e) {
+						console.log(e.keyCode);
+						if(e.keyCode == 27)
+						{
+							this.operationMode = '';
+							this.operationModePair = 0;
+							SharedEvents.$emit('operation-cancel');
+						}
+					});
+
+					this.svgElement.addEventListener('mousemove', this.updatePointerLocation);
+					this.svgElement.addEventListener('mousedown', this.svgElementMouseDown);
+				},
+				created()
+				{
+					SharedEvents.$on('operation-cancel', () => {
+						this.operationMode = '';
+						
+					});
+				},
+				computed:
+				{
+				},
+				methods:
+				{
+					updateMatrix()
+					{
+						var id = $('#propertyIdElement').val();
+						var selectedElement = document.querySelector('#' + id);
+						console.log(selectedElement);
+						
+						var currentMatrix = selectedElement.getAttributeNS(null, "transform").slice(7, -1).split(' ');
+						for (var i = 0; i < currentMatrix.length; i++) {
+							currentMatrix[i] = parseFloat(currentMatrix[i]);
+						}
+
+						try
+						{
+							currentMatrix[0] = $('#propertyElementMatrix0').val();
+							currentMatrix[1] = $('#propertyElementMatrix1').val();
+							currentMatrix[2] = $('#propertyElementMatrix2').val();
+							currentMatrix[3] = $('#propertyElementMatrix3').val();
+							currentMatrix[4] = $('#propertyElementMatrix4').val();
+							currentMatrix[5] = $('#propertyElementMatrix5').val();
+							selectedElement.setAttributeNS(null, "transform", "matrix(" + currentMatrix.join(' ') + ")");
+
+							selectedElement.setAttributeNS(null, 'x2', $('#propertyElementX2').val());
+							selectedElement.setAttributeNS(null, 'y2', $('#propertyElementY2').val());
+
+						}
+						catch(err)
+						{
+							console.error(err);
+						}
+					},
+					deleteSvgElement()
+					{
+						try{
+						var id = $('#propertyIdElement').val();
+						var selectedElement = document.querySelector('#' + id);
+						var svgContent = document.querySelector('#svgContent');
+						svgContent.removeChild(selectedElement);
+						}
+						catch(err)
+						{
+							console.error(err);
+						}
+					},
+					assignedHandle()
+					{
+						var x = this.handleCounter;
+						this.handleCounter = this.handleCounter + 1;
+						return x;
+					},
+					addText()
+					{
+						this.text(this.addTextValue);
+						this.addTextValue = '';
+					},
+					cancelText()
+					{						
+						this.addTextValue = '';
+					},
+					cursorPoint(evt){
+						var pt = this.svgElement.createSVGPoint();
+						pt.x = evt.clientX; pt.y = evt.clientY;
+  						return pt.matrixTransform(this.svgElement.getScreenCTM().inverse());
+				        //return pt.matrixTransform(this.svgElement.getCTM().inverse());
+					},
+					svgElementMouseDown(event)
+					{
+						if(this.operationMode == 'connection')
+						{
+							if(this.operationModePair == 0)
+							{
+								this.operationModeX1 = this.cursorPoint(event).x;
+								this.operationModeY1 = this.cursorPoint(event).y;
+								this.operationModePair++;
+							}
+							else if(this.operationModePair == 1)
+							{
+								this.operationModeX2 = this.cursorPoint(event).x;
+								this.operationModeY2 = this.cursorPoint(event).y;
+								this.connection(this.operationModeX1, this.operationModeY1, this.operationModeX2, this.operationModeY2, 1);
+								this.operationModeX1 = this.operationModeX2;
+								this.operationModeY1 = this.operationModeY2;
+							}
+						}
+					},
+					updatePointerLocation(event)
+					{
+						this.x = event.x;
+						this.y = event.y;
+					},
+					selectMousePointerMode(mode)
+					{
+						switch(mode)
+						{
+							case 'pointer':
+							{
+								this.pointerMode = 'pointer';
+								break;
+							}
+							case 'move':
+							{
+								this.pointerMode = 'move';
+								break;
+							}
+							case 'pan':
+							{
+								this.pointerMode = 'pan';
+								break;
+							}
+							case 'text':
+							{
+								$('#text-modal').modal('show');
+								break;
+							}
+						}
+					},
+					addObject(code)
+					{
+						switch(code)
+						{
+							case 'busbar':
+							{
+								this.busbar(2);
+								break;
+							}
+							case 'tx':
+							{
+								this.tx();
+								break;
+							}
+							case 'connection':
+							{
+								this.operationMode = 'connection';
+								this.operationModePair = 0;
+								break;
+							}
+							default:
+							{
+								break;
+							}
+						}
+					},
+					text(value)
+					{
+						var sObj = document.createElementNS(NS, "text");
+						sObj.setAttribute("id", "HANDLE_" + this.assignedHandle());
+						sObj.setAttribute("x", 20);
+						sObj.setAttribute("y",20); 
+						sObj.setAttribute("transform", "matrix(1 0 0 1 0 0)");  
+						sObj.setAttribute("class", "draggable");
+						sObj.setAttribute("onmousedown", "selectElement(evt)");
+						var textNode = document.createTextNode(value);
+						sObj.appendChild(textNode);
+
+						document.getElementById("svgContent").appendChild(sObj);
+						this.elements.push({tagName: 'label'});
+					},
+					busbar(strokeWidth)
+					{
+						var sObj = document.createElementNS(NS, "line");
+						sObj.setAttribute("id", "HANDLE_" + this.assignedHandle());
+						sObj.setAttribute("x1", "20");
+						sObj.setAttribute("y1", "20");
+						sObj.setAttribute("x2", "120");
+						sObj.setAttribute("y2", "20");
+						sObj.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+						sObj.setAttribute("class", "draggable");
+						sObj.setAttribute("onmousedown", "selectElement(evt)");
+						sObj.style.fill = "none";
+						sObj.style.stroke = "#000000";
+						sObj.style.strokeWidth = strokeWidth;
+						document.getElementById("svgContent").appendChild(sObj);
+
+						this.elements.push({tagName: 'busbar'});
+					},
+					connection(x1, y1, x2, y2, strokeWidth)
+					{
+						var sObj = document.createElementNS(NS, "line");
+						sObj.setAttribute("id", "HANDLE_" + this.assignedHandle());
+						sObj.setAttribute("x1", x1);
+						sObj.setAttribute("y1", y1);
+						sObj.setAttribute("x2", x2);
+						sObj.setAttribute("y2", y2);
+						sObj.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+						sObj.setAttribute("class", "draggable");
+						sObj.setAttribute("onmousedown", "selectElement(evt)");
+						sObj.style.fill = "none";
+						sObj.style.stroke = "#000000";
+						sObj.style.strokeWidth = strokeWidth;
+						if(this.operationMode == 'connection')
+						{
+							document.getElementById("svgContent").appendChild(sObj);
+							this.elements.push({tagName: 'connection'});
+						}
+					},
+					tx()
+					{
+						var mainGroup = document.createElementNS(NS, 'g');
+						mainGroup.setAttribute("id", "HANDLE_" + this.assignedHandle());
+						mainGroup.setAttribute("x", 50);
+						mainGroup.setAttribute("y", 50);
+						mainGroup.setAttribute("pointer-events", "visible");
+						mainGroup.setAttribute("class", "x draggable");
+						mainGroup.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+						mainGroup.setAttribute("onmousedown", "selectElement(evt)");
+						mainGroup.setAttribute("onmouseup", "deselectElement(evt)");
+			
+						var group1 = document.createElementNS(NS, 'g');
+						var path = document.createElementNS(NS, 'path');
+						path.setAttribute('d', 'M52,19c11,0,20,9,20,20s-9,20-20,20s-20-9-20-20S41,19,52,19 M52,18c-11.6,0-21,9.4-21,21s9.4,21,21,21s21-9.4,21-21S63.6,18,52,18L52,18z');
+						group1.appendChild(path);
+						
+						var group2 = document.createElementNS(NS, 'g');
+						path = document.createElementNS(NS, 'path');
+						path.setAttribute('d', 'M52,40c11,0,20,9,20,20s-9,20-20,20s-20-9-20-20S41,40,52,40 M52,39c-11.6,0-21,9.4-21,21s9.4,21,21,21s21-9.4,21-21S63.6,39,52,39L52,39z');
+						group2.appendChild(path);
+
+						var line1 = document.createElementNS(NS, 'line');
+						line1.setAttribute("x1", "51.5");
+						line1.setAttribute("y1", "0.5");
+						line1.setAttribute("x2", "51.5");
+						line1.setAttribute("y2", "18.5");
+						line1.style.fill = "none";
+						line1.style.stroke = "#000000";
+						line1.style.strokeWidth = 1;
+
+						var line2 = document.createElementNS(NS, 'line');
+						line2.setAttribute("x1", "51.5");
+						line2.setAttribute("y1", "80");
+						line2.setAttribute("x2", "51.5");
+						line2.setAttribute("y2", "99.5");
+						line2.style.fill = "none";
+						line2.style.stroke = "#000000";
+						line2.style.strokeWidth = 1;
+
+						var connector1 = document.createElementNS(NS, "rect");
+						connector1.setAttribute("x", 51.5);
+						connector1.setAttribute("y", 0.4);
+						connector1.setAttribute("width", 0.1);
+						connector1.setAttribute("height", 0.1);
+						connector1.style.fill = "none";
+						connector1.style.stroke = "#000000";
+						connector1.style.strokeMiterlimit = 1;
+
+						var connector2 = document.createElementNS(NS, "rect");
+						connector2.setAttribute("x", 51.5);
+						connector2.setAttribute("y", 99.4);
+						connector2.setAttribute("width", 0.1);
+						connector2.setAttribute("height", 0.1);
+						connector2.style.fill = "none";
+						connector2.style.stroke = "#000000";
+						connector2.style.strokeMiterlimit = 1;
+
+						var symbolBoundary = document.createElementNS(NS, "rect");
+						symbolBoundary.setAttribute("x", 0.5);
+						symbolBoundary.setAttribute("y", 0.5);
+						symbolBoundary.setAttribute("width", 99);
+						symbolBoundary.setAttribute("height", 99);
+						symbolBoundary.style.fill = "none";
+
+						mainGroup.appendChild(group1);
+						mainGroup.appendChild(group1);
+						mainGroup.appendChild(group2);
+						mainGroup.appendChild(line1);
+						mainGroup.appendChild(line2);
+						mainGroup.appendChild(connector1);
+						mainGroup.appendChild(connector2);
+						mainGroup.appendChild(symbolBoundary);
+
+						document.getElementById("svgContent").appendChild(mainGroup);
+
+						this.elements.push({tagName: 'transformer'});
+					},
+					xobject() {
+						var sObj = document.createElementNS(NS, "image");
+						sObj.setAttributeNS(null, 'height', '100');
+						sObj.setAttributeNS(null, 'width', '100');
+						sObj.setAttributeNS(null, 'width', '100');
+						sObj.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+						sObj.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'symbols/tx.svg');
+						sObj.setAttributeNS(null, 'x', '10');
+						sObj.setAttributeNS(null, 'y', '10');
+						sObj.setAttribute("class", "draggable");
+						sObj.setAttribute("onmousedown", "selectElement(evt)");
+						document.getElementById("svgContent").appendChild(sObj);
+					}
+				}
+			});
+
+			var NS = "http://www.w3.org/2000/svg";
+
+			var findParent = function(obj, parentClassName)
+			{
+				try
+				{
+					var stop = false;
+					var i = 0;
+					var parentElement = obj;
+					do
+					{
+						console.log("OBJECT: ");
+						console.log(parentElement);
+						console.log("CLASS: ");
+						var parentAttribute = parentElement.getAttribute('class');
+						if(parentAttribute != null && parentAttribute !== '')
+						{
+							var attributes = parentAttribute.split(' ');
+							if(attributes != null && attributes.length > 0)
+							{
+								console.log(attributes[0]);
+								if(attributes[0] == parentClassName)
+								{
+									return parentElement;
+								}
+							}
+						}
+						if(i == 100 || parentElement == null || parentElement === 'undefined' || parentElement === '')
+						{
+							stop = true;
+						}
+						parentElement = parentElement.parentElement;
+						i++;
+					}
+					while(stop == false);
+				}
+				catch(err)
+				{
+					console.error(err);
+				}
+				return null;
+			}
+
+			$(function () {
+				resize_svg_div();
+				$(window).resize(function() {
+ 					 resize_svg_div();
+				});
+			});
+
+			function resize_svg_div() {
+				var svgContainerWidth = $('#svgContainer').width();
+				var windowHeight = window.innerHeight;
+				$("#svgCanvas").width(svgContainerWidth);
+				$("#svgCanvas").height(windowHeight);
+
+				var halfWindowHeight = windowHeight/2;
+				$("#elementPropertyPanel").height(halfWindowHeight);
+				$("#elementListPanel").height(halfWindowHeight);
+			}
+
+		</script>
+	</body>
+</html>

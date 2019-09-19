@@ -1,0 +1,1126 @@
+0<html>
+	<head>
+		<title>SVG DRAWING TOOL</title>
+		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		<script src="vue.js"></script> 
+		<script src="jquery-3.2.1.js"></script>
+		<script src="axios.js"></script>
+		<script src="svg-pan-zoom.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+		<link rel="stylesheet" type="text/css" href="site.css" />
+	</head>
+	<body>
+		<div id="root" class="wrapper container" style="height: 500px;">
+			<nav id="sidebar">
+				<ul class="list-unstyled components" style="padding-left: 15px; margin-bottom: 50px;">
+					<li :class="{ selectedOperationMode: isDefaultOperationMode }"><a href="#" title="point" @click="svgComponent.setOperationMode('default')"><img src="editor-icons/pointer.svg" style="width: 40px;" /></a></li>
+					<li :class="{ selectedOperationMode: isMoveOperationMode }"><a href="#" title="move" @click="svgComponent.setOperationMode('move')"><img src="editor-icons/move.svg" style="width: 40px;" /></a></li>
+					<li :class="{ selectedOperationMode: isPanOperationMode }"><a href="#" title="pan" @click="svgComponent.setOperationMode('pan')"><img src="editor-icons/pan.svg" style="width: 40px;" /></a></li>
+				</ul>
+				<ul class="list-unstyled components" style="padding-left: 15px;">
+					<li><a href="#" title="text" @click="addElement('text')"><img src="editor-icons/text.svg" style="width: 50px;" /></a></li>
+					<li :class="{ selectedOperationMode: isConnectionMode }"><a href="#" title="Line" @click="svgComponent.setOperationMode('connection')"><img src="editor-icons/connection-icon.svg" alt="Line" title="Line" /></a></li>
+					<li><a href="#" title="Connector" @click="addElement('connector')"><img src="editor-icons/connector-icon.svg" alt="Connector" title="Connector" /></a></li>
+					<li><a href="#" title="Busbar" @click="addElement('busbar')"><img src="editor-icons/busbar-icon.svg" alt="Busbar" title="Busbar" /></a></li>
+					<li><a href="#" title="CB" @click="addElement('circuit-breaker')"><img src="editor-icons/cb-icon.svg" alt="Circuit Breaker" title="Circuit Breaker" /></a></li>
+					<li><a href="#" title="TX" @click="addElement('transformer')"><img src="symbols/tx.svg" alt="Transformer" title="Transformer" /></a></li>
+					<li><a href="#" title="Ground" @click="addElement('ground')"><img src="editor-icons/ground-icon.svg" alt="Ground" title="Ground" /></a></li>
+				</ul>
+			</nav>
+			<div id="content" style="width: 100%;">
+				<div class="container-fluid">
+					<div class="col-sm-8 col-md-8 col-lg-10" style="padding: 0;">
+						<div id="svgContainer" style="background-color: #ffffff;">
+							<svg xmlns="http://www.w3.org/2000/svg" id="svgCanvas" name="svgCanvas" style="width: 890px; height: 550px;" viewbox="0 0 890 550" preserveAspectRatio="xMidYMid meet" version="1.1">
+								<g class="svg-pan-zoom_viewport">
+									<g id='svgContent' transform="matrix(1,0,0,1,0,0);"></g>
+								</g>
+							</svg>
+						</div>
+						<div>
+							cursor position: x: {{x}} y: {{y}}<br/>
+							cursor position: x: {{tmpX}} y: {{tmpY}}<br/>
+						</div>
+					</div>
+					<div class="col-sm-4 col-md-4 col-lg-2">
+						<div id="elementPropertyPanel">
+							<label class="unselectable">Property</label>
+							<div class="container-fluid" style="padding: 0;">
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">ID</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyIdElement" v-model="selectedIdElement" type="text" readonly="readonly">
+									</div>
+								</div>								
+								<!--<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">X1</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementX1" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">Y1</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementY1" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">X2</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementX2" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">Y2</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementY2" type="number" step="0.1" value="">
+									</div>
+								</div>
+
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 0</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementMatrix0" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 1</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementMatrix1" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 2</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementMatrix2" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 3</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementMatrix3" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 4</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementMatrix4" type="number" step="0.1" value="">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">MATRIX 5</div>
+								</div>								
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<input class="form-control" id="propertyElementMatrix5" type="number" step="0.1" value="">
+									</div>
+								</div>-->
+								<div class="row">
+									<div class="col-sm-12 col-md-12 col-lg-12">
+										<!--<button class="btn btn-primary" @click="updateMatrix">UPDATE</button>-->
+										<button class="btn btn-danger" @click="removeElement">DELETE</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="text-modal" class="modal fade">
+	 			<div class="modal-dialog" role="document">
+	    			<div class="modal-content">
+	      				<div class="modal-header">
+		        			<h5 class="modal-title">Enter Text</h5>
+		        			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		          				<span aria-hidden="true">&times;</span>
+		        			</button>
+	      				</div>
+		      			<div class="modal-body">
+		        			<input class="form-control" type="text" v-model="addTextValue" />
+		      			</div>
+		      			<div class="modal-footer">
+		        			<button type="button" class="btn btn-primary" @click="addText">Add</button>
+		        			<button type="button" class="btn btn-secondary" data-dismiss="modal" @click="cancelText">Close</button>
+		      			</div>
+	    			</div>
+	  			</div>
+			</div>
+		</div>
+		<script type="text/javascript">
+
+			class Components
+			{
+				static text(idHandle, value)
+				{
+					var element = document.createElementNS(NS, "text");
+					element.setAttribute("id", "HANDLE_" + idHandle);
+					element.setAttribute("x", 50);
+					element.setAttribute("y",50); 
+					element.setAttribute("transform", "matrix(1 0 0 1 0 0)");  
+					element.setAttribute("class", "draggable");
+					element.setAttribute("drag-x", 50);
+					element.setAttribute("drag-y", 50);
+					var textNode = document.createTextNode(value);
+					element.appendChild(textNode);
+					return element;
+				}
+
+				static connector(idHandle, radius, fill)
+				{
+					var element = document.createElementNS(NS, "circle");
+					element.setAttribute("cx", 50);
+					element.setAttribute("cy", 50);
+					element.setAttribute("r", radius);
+					element.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+					element.setAttribute("class", "draggable");	
+					element.setAttribute("drag-x", 50);
+					element.setAttribute("drag-y", 50);
+					element.style.fill = fill;
+					element.style.stroke = "#000000";
+					element.style.strokeMiterlimit = 1;
+					return element;
+				}
+
+				static circuitBreaker(idHandle)
+				{
+					var element = document.createElementNS(NS, "rect");
+					element.setAttribute("id", "HANDLE_" + idHandle);
+					element.setAttribute("x", "50");
+					element.setAttribute("y", "50");
+					element.setAttribute("width", "15");
+					element.setAttribute("height", "15");
+					element.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+					element.setAttribute("class", "draggable");					
+					element.setAttribute("drag-x", 50);
+					element.setAttribute("drag-y", 50);
+					element.style.fill = "#ffffff";
+					element.style.stroke = "#000000";
+					element.style.strokeWidth = 1;
+					return element;
+				}
+
+				static busbar(idHandle, strokeWidth)
+				{
+					var element = document.createElementNS(NS, "line");
+					element.setAttribute("id", "HANDLE_" + idHandle);
+					element.setAttribute("x1", "50");
+					element.setAttribute("y1", "50");
+					element.setAttribute("x2", "520");
+					element.setAttribute("y2", "50");
+					element.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+					element.setAttribute("class", "draggable");					
+					element.setAttribute("drag-x", 50);
+					element.setAttribute("drag-y", 50);
+					element.style.fill = "none";
+					element.style.stroke = "#000000";
+					element.style.strokeWidth = strokeWidth;
+					return element;					
+				}
+
+				static connection(idHandle, x1, y1, x2, y2, strokeWidth)
+				{
+					var element = document.createElementNS(NS, "line");
+					element.setAttribute("id", "HANDLE_" + idHandle);
+					element.setAttribute("x1", x1);
+					element.setAttribute("y1", y1);
+					element.setAttribute("x2", x2);
+					element.setAttribute("y2", y2);
+					element.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+					element.setAttribute("class", "draggable");
+					element.setAttribute("drag-x", x1);
+					element.setAttribute("drag-y", y1);
+					element.style.fill = "none";
+					element.style.stroke = "#000000";
+					element.style.strokeWidth = strokeWidth;
+					return element;
+				}
+
+				static transformer(idHandle)
+				{
+					var mainGroup = document.createElementNS(NS, 'g');
+					mainGroup.setAttribute("id", "HANDLE_" + idHandle);
+					mainGroup.setAttribute("x", 50);
+					mainGroup.setAttribute("y", 50);
+					mainGroup.setAttribute("pointer-evts", "visible");
+					mainGroup.setAttribute("class", "x draggable");
+					mainGroup.setAttribute("drag-x", 50);
+					mainGroup.setAttribute("drag-y", 50);
+					mainGroup.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+		
+					var group1 = document.createElementNS(NS, 'g');
+					var path = document.createElementNS(NS, 'path');
+					path.setAttribute('d', 'M52,19c11,0,20,9,20,20s-9,20-20,20s-20-9-20-20S41,19,52,19 M52,18c-11.6,0-21,9.4-21,21s9.4,21,21,21s21-9.4,21-21S63.6,18,52,18L52,18z');
+					group1.appendChild(path);
+					
+					var group2 = document.createElementNS(NS, 'g');
+					path = document.createElementNS(NS, 'path');
+					path.setAttribute('d', 'M52,40c11,0,20,9,20,20s-9,20-20,20s-20-9-20-20S41,40,52,40 M52,39c-11.6,0-21,9.4-21,21s9.4,21,21,21s21-9.4,21-21S63.6,39,52,39L52,39z');
+					group2.appendChild(path);
+
+					var line1 = document.createElementNS(NS, 'line');
+					line1.setAttribute("x1", "51.5");
+					line1.setAttribute("y1", "0.5");
+					line1.setAttribute("x2", "51.5");
+					line1.setAttribute("y2", "18.5");
+					line1.style.fill = "none";
+					line1.style.stroke = "#000000";
+					line1.style.strokeWidth = 1;
+
+					var line2 = document.createElementNS(NS, 'line');
+					line2.setAttribute("x1", "51.5");
+					line2.setAttribute("y1", "80");
+					line2.setAttribute("x2", "51.5");
+					line2.setAttribute("y2", "99.5");
+					line2.style.fill = "none";
+					line2.style.stroke = "#000000";
+					line2.style.strokeWidth = 1;
+
+					var connector1 = document.createElementNS(NS, "rect");
+					connector1.setAttribute("x", 51.5);
+					connector1.setAttribute("y", 0.4);
+					connector1.setAttribute("width", 0.1);
+					connector1.setAttribute("height", 0.1);
+					connector1.style.fill = "none";
+					connector1.style.stroke = "#000000";
+					connector1.style.strokeMiterlimit = 1;
+
+					var connector2 = document.createElementNS(NS, "rect");
+					connector2.setAttribute("x", 51.5);
+					connector2.setAttribute("y", 99.4);
+					connector2.setAttribute("width", 0.1);
+					connector2.setAttribute("height", 0.1);
+					connector2.style.fill = "none";
+					connector2.style.stroke = "#000000";
+					connector2.style.strokeMiterlimit = 1;
+
+					var symbolBoundary = document.createElementNS(NS, "rect");
+					symbolBoundary.setAttribute("x", 30);
+					symbolBoundary.setAttribute("y", 19);
+					symbolBoundary.setAttribute("width", 42);
+					symbolBoundary.setAttribute("height", 60);
+					symbolBoundary.setAttribute("class", "symbol-container");
+					symbolBoundary.style.fill = "transparent";
+
+					mainGroup.appendChild(group1);
+					mainGroup.appendChild(group1);
+					mainGroup.appendChild(group2);
+					mainGroup.appendChild(line1);
+					mainGroup.appendChild(line2);
+					mainGroup.appendChild(connector1);
+					mainGroup.appendChild(connector2);
+					mainGroup.appendChild(symbolBoundary);
+
+					return mainGroup;					
+				}
+			}
+
+			class ElementComponent
+			{
+				constructor(data)
+				{
+					this.id = data.id;
+					this.type = data.type;
+					this.tagName = data.tagName;
+					this.svgElement = data.svgElement;
+				}
+			}
+
+			class PointPair
+			{
+				constructor()
+				{
+					this.point1 = null;
+					this.point2 = null;
+				}
+
+				//region GETTERS
+
+				get getPoint1()
+				{
+					return this.point1;
+				}
+
+				get getPoint2()
+				{
+					return this.point2;	
+				}
+
+				//endregion
+			}
+
+			class Point
+			{
+				constructor(x, y)
+				{
+					this.x = x;
+					this.y = y;
+				}
+
+				//region GETTERS
+
+				get getX()
+				{
+					return this.x;
+				}
+
+				get getY()
+				{
+					return this.y;
+				}
+
+				//endregion
+			}
+
+			class SvgComponent
+			{
+				constructor(svgElement, svgMainGroupName)
+				{
+					this.svgElement = svgElement;
+					this.svgMainGroupName = svgMainGroupName;
+					this.x = 0;
+					this.y = 0;
+					this.tmpX = 0;
+					this.tmpY = 0;
+					this.operationMode = 'default';
+					this.selectedElement = 0;
+					this.isDragging = false;
+					this.handleCounter = 1;
+					this.elements = [];
+					this.offsetX = 0;
+					this.offsetY = 0;
+					this.currentMatrix = 0;
+					this.pointPair = null;
+					this.isOnGoingAction = false;
+
+					this.canvasSvgPanZoom = svgPanZoom(this.svgElement, {
+						zoomEnabled: true,
+						panEnabled: false,
+						dblClickZoomEnabled: false,
+	          			mouseWheelZoomEnabled: true,
+						preventMouseEventsDefault: false,
+	          			controlIconsEnabled: true,
+	          			fit: true,
+	          			center: true });
+
+					this.svgElement.addEventListener("mousemove", this.onMouseMoveHandler.bind(this));
+					this.svgElement.addEventListener("mousedown", this.onMouseDownHandler.bind(this));
+					this.svgElement.addEventListener("mouseup", this.onMouseUpHandler.bind(this));
+				}
+
+				//region GETTERS
+
+				get getX()
+				{
+					return this.x;
+				}
+
+				get getY()
+				{
+					return this.y;
+				}
+
+				get getNextIdHandle()
+				{
+					var id = this.handleCounter;
+					this.handleCounter = this.handleCounter + 1;
+					return id;
+				}
+
+				get getElements()
+				{
+					return this.elements;
+				}
+
+				get getSvgMainGroup()
+				{
+					return document.querySelector(this.svgMainGroupName);
+				}
+
+				//endregion
+
+				//region METHODS
+
+				setOperationMode(mode)
+				{
+					this.operationMode = mode;
+					this.pointPair = null;
+					this.selectedElement = 0;
+					if(this.operationMode == 'pan')
+					{
+						this.canvasSvgPanZoom.enablePan();
+						console(this.canvasSvgPanZoom);
+					}
+					else
+					{
+						this.canvasSvgPanZoom.disablePan();
+					}
+				}
+
+				hasClass(element, targetClassName)
+				{
+					try
+					{
+						var classAttribute = element.getAttribute('class');
+						if(classAttribute != null && classAttribute !== '')
+						{
+							var attributes = classAttribute.split(' ');
+							if(attributes != null && attributes.length > 0)
+							{
+								for(var i = 0; i < attributes.length; ++i)
+								{
+									if(attributes[i] == targetClassName)
+									{
+										return true;
+									}
+								}
+							}
+						}
+					}
+					catch(err)
+					{
+						console.error(err);
+					}
+					return false;
+				}
+
+				findParent(element, targetClassName)
+				{					
+					try
+					{
+						var stop = false;
+						var i = 0;
+						var parentElement = element;
+						do
+						{
+							var parentAttribute = parentElement.getAttribute('class');
+							if(parentAttribute != null && parentAttribute !== '')
+							{
+								var attributes = parentAttribute.split(' ');
+								if(attributes != null && attributes.length > 0)
+								{
+									if(this.hasClass(parentElement, targetClassName))
+									{
+										return parentElement;
+									}
+								}
+							}
+							if(i == 100 || parentElement == null || parentElement === 'undefined' || parentElement === '')
+							{
+								stop = true;
+							}
+							parentElement = parentElement.parentElement;
+							i++;
+						}
+						while(stop == false);
+					}
+					catch(err)
+					{
+						console.error(err);
+					}
+					return null;
+				}
+
+				convertXYToScreenCTMPoint(x, y)
+				{
+					var pt = this.svgElement.createSVGPoint();
+					pt.x = x;
+					pt.y = y;
+					return pt.matrixTransform(this.svgElement.getScreenCTM().inverse());
+				}
+
+				convertMousePointToScreenCTMPoint(evt)
+				{
+					var pt = this.svgElement.createSVGPoint();
+					pt.x = evt.clientX; 
+					pt.y = evt.clientY;
+					return pt.matrixTransform(this.svgElement.getScreenCTM().inverse());
+				}
+
+				/**
+				THIS CONVERTS MOUSE EVENT INTO SVG SCALE WITH REGARDS TO PAN AND ZOOM
+				*/
+				convertToSvgPointScale(evt)
+				{
+					var currentPan = this.canvasSvgPanZoom.getPan();
+					var realZoom = this.canvasSvgPanZoom.getSizes().realZoom;
+
+					var x = this.convertMousePointToScreenCTMPoint(evt).x;
+					var y = this.convertMousePointToScreenCTMPoint(evt).y;
+					x = (x - currentPan.x) / realZoom;
+					y = (y - currentPan.y) / realZoom;
+					return new Point(x, y);
+				}
+
+				/**
+				THIS CONVERTS X/Y INTO SVG SCALE WITH REGARDS TO PAN AND ZOOM.
+				THIS METHOD ASSUMES X/Y COORDINATE CONVERTED IN CORRECT CTM
+				*/
+				convertXYToSvgPointScale(x, y)
+				{
+					var currentPan = this.canvasSvgPanZoom.getPan();
+					var realZoom = this.canvasSvgPanZoom.getSizes().realZoom;
+
+					var pt = this.convertXYToScreenCTMPoint(x, y);
+					var dx = (pt.x - currentPan.x) / realZoom;
+					var dy = (pt.y - currentPan.y) / realZoom;
+					return new Point(dx, dy);
+				}
+
+				//region MOUSE EVENT HANDLER
+
+				onMouseMoveHandler(evt)
+				{
+					this.tmpX = evt.x;
+					this.tmpY = evt.y;
+					this.x = this.convertToSvgPointScale(evt).x;
+					this.y = this.convertToSvgPointScale(evt).y;
+
+					switch(this.operationMode)
+					{
+						case 'default':
+						{
+							break;
+						}
+						case 'move':
+						{
+							this.moveElement(evt);
+							break;
+						}
+						case 'pan':
+						{
+							break;
+						}
+						case 'connection':
+						{
+							if(this.pointPair != null)
+							{
+								if(this.pointPair.getPoint1 != null && this.isOnGoingAction)
+								{
+									try
+									{
+										var deltaPoint = this.convertToSvgPointScale(evt);
+										this.selectedElement.setAttributeNS(null, "x2", deltaPoint.getX);
+										this.selectedElement.setAttributeNS(null, "y2", deltaPoint.getY);
+									}
+									catch(err)
+									{
+										console.error(err);
+									}
+								}
+							}
+							break;
+						}
+						default:
+						{
+							break;
+						}
+					}
+				}
+
+				onMouseUpHandler(evt)
+				{
+					if(this.operationMode == 'move')
+					{
+						this.isDragging = false;
+						this.selectedElement = 0;
+					}
+				}
+
+				onMouseDownHandler(evt)
+				{
+					try
+					{	
+						switch(this.operationMode)
+						{
+							case 'default':
+							{
+								this.selectElement(evt);
+								break;
+							}
+							case 'move':
+							{
+								this.selectElement(evt);
+								this.isDragging = true;
+								if(this.selectedElement != 0)
+								{
+									var eventOriginalPoint = this.convertToSvgPointScale(evt);
+									this.offsetX = eventOriginalPoint.x - parseInt(this.selectedElement.getAttribute("drag-x"));
+									this.offsetY = eventOriginalPoint.y - parseInt(this.selectedElement.getAttribute("drag-y"));
+								}
+								break;
+							}
+							case 'pan':
+							{
+								break;
+							}
+							case 'connection':
+							{
+								if(this.pointPair == null)
+								{ 
+									this.pointPair = new PointPair();
+								}
+
+								if(this.pointPair.getPoint1 == null)
+								{
+									this.pointPair.point1 = this.convertToSvgPointScale(evt);
+									var element = Components.connection(this.getNextIdHandle, this.pointPair.point1.getX, this.pointPair.point1.getY, this.pointPair.point1.getX, this.pointPair.point1.getY, 1);
+									this.getSvgMainGroup.appendChild(element);
+									this.selectedElement = element;
+									this.isOnGoingAction = true;
+								}
+								else if(this.pointPair.getPoint1 != null && this.pointPair.getPoint2 == null)
+								{
+									this.pointPair.point2 = this.convertToSvgPointScale(evt);
+									//region SET THE LAST POINT A NEW POINT1
+									if(window.event.shiftKey)
+									{
+										this.pointPair.point1 = new Point(this.pointPair.point2.getX, this.pointPair.point2.getY);
+										this.pointPair.point2 = null;
+
+										var element = Components.connection(this.getNextIdHandle, this.pointPair.point1.getX, this.pointPair.point1.getY, this.pointPair.point1.getX, this.pointPair.point1.getY, 1);
+										this.getSvgMainGroup.appendChild(element);
+										this.selectedElement = element;
+										
+										var elementComponent = new ElementComponent({
+											id: element.id,
+											type: 'connection',
+											tagName: '',
+											svgElement: element
+										});
+										this.elements.push(elementComponent);
+
+										this.isOnGoingAction = true;
+									}
+									else
+									{
+										this.isOnGoingAction = false;
+										this.pointPair = null;
+									}
+									//endregion
+									
+								}
+								break;
+							}
+							default:
+							{
+								break;
+							}
+						}
+					}
+					catch(err)
+					{
+					}
+				}				
+
+				//endregion
+
+				moveElement(evt)
+				{
+					if(this.selectedElement != 0 && this.isDragging)
+					{						
+						var newPoint = this.convertToSvgPointScale(evt);
+						//region THIS CODE RESOLVE ISSUE WITH INITIAL JUMPY ELEMENT MOVE
+						if((this.offsetX > -5 && this.offsetX < 5) || (this.offsetY > -5 && this.offsetY < 5))
+						{
+							newPoint.x -= this.offsetX;
+							newPoint.y -= this.offsetY;
+							this.selectedElement.setAttribute('drag-x', newPoint.x);
+							this.selectedElement.setAttribute('drag-y', newPoint.y);						
+							this.selectedElement.setAttribute("transform", "translate(" + newPoint.x + "," + newPoint.y + ")");
+							this.offsetX = newPoint.x;
+							this.offsetY = newPoint.y;
+						}
+						//endregion
+						newPoint.x -= this.offsetX;
+						newPoint.y -= this.offsetY;
+						this.selectedElement.setAttribute('drag-x', newPoint.x);
+						this.selectedElement.setAttribute('drag-y', newPoint.y);						
+						this.selectedElement.setAttribute("transform", "translate(" + newPoint.x + "," + newPoint.y + ")");
+					}
+				}
+
+				addElement(code, options)
+				{
+					switch(code)
+					{
+						case 'text':
+						{
+							if(options != null)
+							{
+								var element = Components.text(this.getNextIdHandle, options.text);
+								this.getSvgMainGroup.appendChild(element);
+
+								var elementComponent = new ElementComponent({
+									id: element.id,
+									type: 'text',
+									tagName: '',
+									svgElement: element
+								});
+								this.elements.push(elementComponent);
+							}
+							break;
+						}
+						case 'busbar':
+						{
+							var element = Components.busbar(this.getNextIdHandle, 4);	
+							this.getSvgMainGroup.appendChild(element);							
+
+							var elementComponent = new ElementComponent({
+								id: element.id,
+								type: 'busbar',
+								tagName: '',
+								svgElement: element
+							});
+							this.elements.push(elementComponent);
+							break;
+						}
+						case 'transformer':
+						{
+							var element = Components.transformer(this.getNextIdHandle);
+							this.getSvgMainGroup.appendChild(element);
+					
+							var elementComponent = new ElementComponent({
+								id: element.id,
+								type: 'transformer',
+								tagName: '',
+								svgElement: element
+							});
+							this.elements.push(elementComponent);
+							break;
+						}
+						case 'connection':
+						{
+							this.operationMode = 'connection';
+							break;
+						}
+						case 'circuit-breaker':
+						{
+							var element = Components.circuitBreaker(this.getNextIdHandle);
+							this.getSvgMainGroup.appendChild(element);
+					
+							var elementComponent = new ElementComponent({
+								id: element.id,
+								type: 'circuitBreaker',
+								tagName: '',
+								svgElement: element
+							});
+							this.elements.push(elementComponent);
+							break;
+						}
+						case 'connector':
+						{							
+							var element = Components.connector(this.getNextIdHandle, 5, "#000000");
+							this.getSvgMainGroup.appendChild(element);
+					
+							var elementComponent = new ElementComponent({
+								id: element.id,
+								type: 'connector',
+								tagName: '',
+								svgElement: element
+							});
+							this.elements.push(elementComponent);
+							break;
+						}
+						default:
+						{
+							break;
+						}
+					}	
+				}
+
+				removeElement()
+				{
+					try
+					{						
+						this.getSvgMainGroup.removeChild(this.selectedElement);
+					}
+					catch(err)
+					{
+						console.error(err);
+					}
+				}
+
+				getSvgElementMatrix(element)
+				{
+					try
+					{
+						var matrix = element.getAttributeNS(null, "transform").slice(7, -1).split(' ');						
+						for (var i = 0; i < matrix.length; i++) {
+							matrix[i] = parseFloat(matrix[i]);
+						}
+						return matrix;
+					}
+					catch(err)
+					{
+						try
+						{
+							element.setAttributeNS(null, "transform", "matrix(1 0 0 1 0 0)");
+							var matrix = element.getAttributeNS(null, "transform").slice(7, -1).split(' ');						
+							for (var i = 0; i < matrix.length; i++) {
+								matrix[i] = parseFloat(matrix[i]);
+							}
+							return matrix;
+						}
+						catch(err2)
+						{
+						}
+					}
+					return 0;
+				}
+
+				selectElement(evt) 
+				{
+					this.selectedElement = evt.target;
+					if(this.hasClass(this.selectedElement, 'symbol-container'))
+					{
+						// THIS IS CODE TO GET THE PARENT GROUP ELEMENT
+						this.selectedElement = this.findParent(this.selectedElement, 'x');
+					}
+					
+					try
+					{
+						if(this.selectedElement.getAttributeNS(null, "id") == 'svgCanvas')
+						{
+							this.selectedElement = 0;
+							this.isDragging = false;
+						}
+						else
+						{
+							try
+							{
+								//$('#propertyIdElement').val(this.selectedElement.getAttributeNS(null, "id"));
+								//$('#propertyElementX').val(currentMatrix[4]);
+								//$('#propertyElementY').val(currentMatrix[5]);
+
+								//$('#propertyElementMatrix0').val(currentMatrix[0]);
+								//$('#propertyElementMatrix1').val(currentMatrix[1]);
+								//$('#propertyElementMatrix2').val(currentMatrix[2]);
+								//$('#propertyElementMatrix3').val(currentMatrix[3]);
+								//$('#propertyElementMatrix4').val(currentMatrix[4]);
+								//$('#propertyElementMatrix5').val(currentMatrix[5]);
+
+								//$('#propertyElementX2').val(this.selectedElement.getAttributeNS(null, "x2"));
+								//$('#propertyElementY2').val(this.selectedElement.getAttributeNS(null, "y2"));
+							}
+							catch(err)
+							{
+							}
+						}
+					}
+					catch(err)
+					{
+						console.error(err);
+					}
+				}
+
+				//endregion
+			}
+
+			window.SharedEvents = new Vue();
+
+			var app = new Vue({
+				el: "#root",
+				data: {	
+					svgComponent: null,
+					addTextValue: '',
+					selectedIdElement: '',
+				},
+				mounted() {
+					this.svgComponent = new SvgComponent(document.querySelector('#svgCanvas'), '#svgContent');
+					window.addEventListener('keydown', function(e) {						
+						if(e.keyCode == 27)
+						{
+							if(this.svgComponent != null && this.svgComponent.operationMode == 'connection')
+							{
+								this.svgComponent.removeElement();
+								this.svgComponent.isOnGoingAction = false;								
+								//this.svgComponent.operationMode = 'connection';
+							}
+							//SharedEvents.$emit('operation-cancel');
+						}
+					}.bind(this));
+				},
+				created()
+				{
+					SharedEvents.$on('operation-cancel', () => {
+						if(this.svgComponent != null && this.svgComponent.operationMode == 'connection')
+						{
+							this.svgComponent.operationMode = 'default';
+						}
+					});
+				},
+				computed:
+				{
+					elements()
+					{
+						if(this.svgComponent != null)
+						{	
+							return this.svgComponent.elements;
+						}
+						return [];
+					},
+					isDefaultOperationMode()
+					{
+						if(this.svgComponent != null)
+						{
+							return this.svgComponent.operationMode == 'default';
+						}
+						return false;
+					},
+					isMoveOperationMode()
+					{
+						if(this.svgComponent != null)
+						{
+							return this.svgComponent.operationMode == 'move';
+						}
+						return false;
+					},
+					isPanOperationMode()
+					{
+						if(this.svgComponent != null)
+						{
+							return this.svgComponent.operationMode == 'pan';
+						}
+						return false;
+					},
+					isConnectionMode()
+					{
+						if(this.svgComponent != null)
+						{
+							return this.svgComponent.operationMode == 'connection';
+						}
+						return false;
+					},
+					x()
+					{
+						if(this.svgComponent != null)
+						{
+							return this.svgComponent.getX;
+						}
+						else
+						{
+							return 0;
+						}
+					},
+					y()
+					{
+						if(this.svgComponent != null)
+						{
+							return this.svgComponent.getY;
+						}
+						else
+						{
+							return 0;
+						}
+					},
+					tmpX()
+					{
+						if(this.svgComponent != null)
+						{
+							return this.svgComponent.tmpX;
+						}
+						else
+						{
+							return 0;
+						}
+					},
+					tmpY()
+					{
+						if(this.svgComponent != null)
+						{
+							return this.svgComponent.tmpY;
+						}
+						else
+						{
+							return 0;
+						}
+					}
+				},
+				methods:
+				{
+					addElement(code)
+					{
+						if(code == 'text')
+						{
+							$('#text-modal').modal('show');
+						}
+						else
+						{
+							this.svgComponent.operationMode = 'default';
+							this.svgComponent.addElement(code);
+						}
+					},
+					removeElement()
+					{
+						if(confirm("Are you sure you want to delete this element?"))
+						{							
+							this.svgComponent.removeElement();
+							this.svgComponent.operationMode = 'default';
+						}
+					},
+					updateMatrix()
+					{
+						var id = $('#propertyIdElement').val();
+						var selectedElement = document.querySelector('#' + id);
+						try
+						{
+							selectedElement.setAttributeNS(null, 'x1', $('#propertyElementX1').val());
+							selectedElement.setAttributeNS(null, 'y1', $('#propertyElementY1').val());
+							selectedElement.setAttributeNS(null, 'x2', $('#propertyElementX2').val());
+							selectedElement.setAttributeNS(null, 'y2', $('#propertyElementY2').val());
+
+						}
+						catch(err)
+						{
+							console.error(err);
+						}
+					},
+					addText()
+					{
+						this.svgComponent.addElement('text', {text: this.addTextValue});
+						this.addTextValue = '';
+						this.svgComponent.operationMode = 'default';
+						$('#text-modal').modal('hide');
+					},
+					cancelText()
+					{						
+						this.addTextValue = '';
+					}
+				}
+			});
+
+			var NS = "http://www.w3.org/2000/svg";
+
+			$(function () {
+				resize_svg_div();
+				$(window).resize(function() {
+ 					 resize_svg_div();
+				});
+			});
+
+			function resize_svg_div() {
+			}
+
+		</script>
+	</body>
+</html>
